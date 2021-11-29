@@ -1,0 +1,21 @@
+0	bluetooth Tx
+1	bluetooth Rx
+2	EN4
+3	EN2
+4	EN3
+5	ENB
+6	ENA
+7	EN1
+8	Echo
+9	RST
+10	SDA
+11	MOSI
+12	MISO
+13	SCK
+	
+A0	LT F
+A1	LT L
+A2	LT R
+A3	조도센서
+A4	Trig
+A5	LED
