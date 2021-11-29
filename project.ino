@@ -10,12 +10,21 @@
 #define LT_MODULE_L A1
 #define LT_MODULE_R A2
 #define LT_MODULE_F A0
-
 #define LIGHT	A3
 #define LED 	A5
+#define SS 10
+#define RST 9
+#define TRIGGER A4
+#define ECHO 8
+#define ENA 6
+#define EN1 7
+#define EN2 3
+#define EN3 4
+#define EN4 2
+#define ENB 5
 
-#define STOP_TO_U_TURN 8
 
+#define STOP_TO_U_TURN 5
 
 enum car_direction{
 	CAR_DIR_FW,
@@ -26,28 +35,20 @@ enum car_direction{
 	CAR_DIR_LR
 };
 
+MFRC522 mfrc522(SS, RST);
+
+int mode = 1;
+
 car_direction prevDirections[STOP_TO_U_TURN];
 car_direction g_carDirection;
 
-int speed = 80;
+int speed = 90;
 int rotatingSpeed = 120;
 int refreshInterval = 100;
 
 
 bool rfs = true;
-
-#define SS 8
-#define RST A4
-#define TRIGGER 12
-#define ECHO 11
-#define ENA 6
-#define EN1 7
-#define EN2 3
-#define EN3 4
-#define EN4 2
-#define ENB 5
-
-//MFRC522 mfrc522(SS, RST);
+bool parking = false;
 
 bool uTurning = false;
 bool rotating = false; // rfs면 RR만 존재, lfs면 LR만 존재
@@ -265,10 +266,11 @@ bool uTurn(car_direction* l, int listLength){
 
 void setup() {
 	Serial.begin(9600);
-	//SPI.begin();
-  	//mfrc522.PCD_Init();
+	SPI.begin();
+  	mfrc522.PCD_Init();
 	pinMode(TRIGGER, OUTPUT);
 	pinMode(ECHO, INPUT);
+	
 }
 
 void loop() {
@@ -287,6 +289,9 @@ void loop() {
 	lt_mode_update();
 	get_light();
 	checkUltrasonic();
+	detectCard();
+	Serial.print("rfs = ");
+	Serial.println(rfs);
 }
 
 
@@ -300,7 +305,44 @@ void get_light(){
 }
 
 void detectCard(){
-	// 나중에 구현
+	if(!mfrc522.PICC_IsNewCardPresent()){
+		return;
+	}
+	// RFID card detected
+	if(!mfrc522.PICC_ReadCardSerial()){
+		return;
+	}
+	Serial.println("new card present");
+	MFRC522::MIFARE_Key key;
+	for(int i = 0; i < 6; ++i){
+		key.keyByte[i] = 0xff;
+	}	
+	byte buffer[16];
+	byte block = 6;
+	byte status = mfrc522.PCD_Authenticate(MFRC522::PICC_CMD_MF_AUTH_KEY_A, block, &key, &(mfrc522.uid));
+	byte size = 2*sizeof(buffer);
+	status = mfrc522.MIFARE_Read(block, buffer, &size);
+	Serial.println("Card tagged");
+	Serial.println(buffer[0]);
+	if (buffer[0] == 0x21) {
+		Serial.println(buffer[0]);
+		byte mode = buffer[1];
+		switch (mode) {
+		case 0x00:
+			rfs = true;
+			parking = false;
+			break;
+		case 0x01:
+			rfs = false;
+			parking = false;
+			break;
+		case 0x02:
+			parking = true;
+			break;
+		}
+	}
+	mfrc522.PICC_HaltA();
+	mfrc522.PCD_StopCrypto1();
 }
 
 void checkUltrasonic(){
@@ -310,8 +352,8 @@ void checkUltrasonic(){
 	digitalWrite(TRIGGER, LOW);
 	duration = pulseIn(ECHO, HIGH);
 	cm = microsecondsToCentimeters(duration);
-	Serial.print(cm);
-	Serial.println("cm");
+	//Serial.print(cm);
+	//Serial.println("cm");
 	// Serial.println();
 	if(0 < cm && cm < 15) proximity = true;
 	else proximity = false;
