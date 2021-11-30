@@ -16,5 +16,5 @@ void loop(){
         car.stop();
     }
     delay(refreshInterval);
-    car.
+    car.sensorUpdate();
 }
