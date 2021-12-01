@@ -1,6 +1,13 @@
 #include "car.h"
 
 
+namespace{
+    inline long microsecondsToCentimeters(long microseconds){
+        return microseconds / 29 / 2;
+    }
+}
+
+
 Car::Car(int sp=0, int rotSp=0){
     lts = Linetracers(LT_MODULE_L, LT_MODULE_F, LT_MODULE_R);
     speed = sp;
@@ -157,7 +164,7 @@ void Car::detectCard(){
 	mfrc522.PCD_StopCrypto1();
 }
 
-bool Car::isBlocked(int cm_threshold=15) const {
+bool Car::isBlocked() const {
     long duration, cm;
 	digitalWrite(TRIGGER, HIGH);
 	delayMicroseconds(10);
@@ -171,7 +178,7 @@ bool Car::isBlocked(int cm_threshold=15) const {
 	return false;
 }
 
-bool Car::isDark(int light_threshold=500) const{
+bool Car::isDark() const {
     int light_sensor = analogRead(LIGHT);
 	//Serial.println(light_sensor);
 	if(light_sensor > light_threshold){
@@ -186,10 +193,4 @@ void Car::sensorUpdate() {
     // for debugging
     Serial.print("rfs = ");
 	Serial.println(rfs);
-}
-
-namespace{
-    inline long microsecondsToCentimeters(long microseconds){
-        return microseconds / 29 / 2;
-    }
 }

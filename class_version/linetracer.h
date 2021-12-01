@@ -1,6 +1,8 @@
 #ifndef LINETRACER_H
 #define LINETRACER_H
 
+#include <Arduino.h>
+
 enum car_direction{
 	CAR_DIR_FW,
 	CAR_DIR_RF,

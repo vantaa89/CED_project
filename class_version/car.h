@@ -33,8 +33,9 @@ public:
     Car(int sp, int rotSp);
     void update();
     void detectCard();
-    bool isBlocked(int cm_threshold=15) const;
-    bool isDark(int light_threshold=500) const;
+    bool isBlocked() const;
+    bool isDark() const;
+    void sensorUpdate();
     //  Driving
     void right();
     void front();
@@ -49,7 +50,8 @@ private:
     int speed, rotatingSpeed;
     int stop_to_uturn = 5;
     
-    
+    static const int cm_threshold = 15;
+    static const int light_threshold = 500;
 };
 
 #endif
