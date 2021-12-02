@@ -24,7 +24,7 @@
 #define ENB 5
 
 
-#define STOP_TO_U_TURN 5
+#define STOP_TO_U_TURN 20
 
 enum car_direction{
   CAR_DIR_FW,
@@ -42,9 +42,9 @@ int mode = 1;
 car_direction prevDirections[STOP_TO_U_TURN];
 car_direction g_carDirection;
 
-int speed = 70;
+int speed = 80;
 int rotatingSpeed = 100;
-int refreshInterval = 100;
+int refreshInterval = 10;
 
 bool uTurning = false;
 bool lightOff = false;
@@ -208,7 +208,6 @@ void car_update(){
     digitalWrite(EN3, HIGH);
     digitalWrite(EN4, LOW);
     digitalWrite(ENB, rotatingSpeed);
-    delay(150);
   }
   
   else if (g_carDirection == CAR_DIR_ST){
@@ -217,6 +216,7 @@ void car_update(){
     
     if(uTurn(prevDirections, STOP_TO_U_TURN)){
         uTurning = true;
+      Serial.println("uturn on");
     }
     
   }
@@ -256,8 +256,6 @@ void loop() {
   lt_mode_update();
   get_light();
   checkUltrasonic();
-  detectCard();
-  
 }
 
 
