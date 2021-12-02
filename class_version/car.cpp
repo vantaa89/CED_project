@@ -7,6 +7,17 @@ namespace{
     }
 }
 
+Car::Car(){
+    lts = Linetracers(LT_MODULE_L, LT_MODULE_F, LT_MODULE_R);
+    speed = 0;
+    rotatingSpeed = 0;
+    Serial.begin(9600);
+    mfrc522 = MFRC522(SS, RST);
+    mfrc522.PCD_Init();
+    pinMode(TRIGGER, OUTPUT);
+    pinMode(ECHO, INPUT);
+}
+
 
 Car::Car(int sp=0, int rotSp=0){
     lts = Linetracers(LT_MODULE_L, LT_MODULE_F, LT_MODULE_R);

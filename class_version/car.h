@@ -30,6 +30,7 @@
 
 class Car {
 public:
+    Car();
     Car(int sp, int rotSp);
     void update();
     void detectCard();
@@ -48,7 +49,7 @@ private:
 
     bool rotating = false, uTurning = false, rfs = true, parking = false;
     int speed, rotatingSpeed;
-    int stop_to_uturn = 5;
+    int stop_to_uturn = 10;
     
     static const int cm_threshold = 15;
     static const int light_threshold = 500;

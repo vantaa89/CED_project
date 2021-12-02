@@ -32,7 +32,7 @@ public:
     bool uturn(int stop_to_uturn);
 private:
     Linetracer left, front, right;
-    static const int MAX_STOP_TO_UTURN = 30;
+    static const int MAX_STOP_TO_UTURN = 50;
     car_direction g_carDirection;
     car_direction prevDirections[MAX_STOP_TO_UTURN];
     

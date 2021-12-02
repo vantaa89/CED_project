@@ -31,25 +31,31 @@ void Linetracers::lt_mode_update(int stop_to_uturn, bool rfs){
     if(rfs){
         if (!ll&&!ff&&!rr){ // 000
 			g_carDirection = CAR_DIR_ST;
+			Serial.println("ST");
 		}
 		else if (rr){   // 001
 			if(ff){ // rotation
 				g_carDirection = CAR_DIR_RR;
+				Serial.println("RR");
 			}
 			else {
 				g_carDirection = CAR_DIR_RF;
+				Serial.println("RF");
 			}
 		}
 		else if (ll){   // 100
 			if(ff){// rotation
 				g_carDirection = CAR_DIR_LR;
+				Serial.println("LR");
 			}
 			else {
 				g_carDirection = CAR_DIR_LF;
+				Serial.println("LF");
 			}
 		}
 		else if (ff){   // 010
 			g_carDirection = CAR_DIR_FW;
+			Serial.println("FW");
 		}
     }
     else{

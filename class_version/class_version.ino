@@ -1,6 +1,6 @@
 #include "car.h"
 
-const int refreshInterval = 100;
+const int refreshInterval = 50;
 int speed = 90, rotatingSpeed = 120;
 Car car;
 
