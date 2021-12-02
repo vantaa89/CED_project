@@ -42,8 +42,8 @@ int mode = 1;
 car_direction prevDirections[STOP_TO_U_TURN];
 car_direction g_carDirection;
 
-int speed = 80;
-int rotatingSpeed = 100;
+int speed = 90;
+int rotatingSpeed = 140;
 int refreshInterval = 10;
 
 bool uTurning = false;
@@ -208,6 +208,7 @@ void car_update(){
     digitalWrite(EN3, HIGH);
     digitalWrite(EN4, LOW);
     digitalWrite(ENB, rotatingSpeed);
+    delay(200);
   }
   
   else if (g_carDirection == CAR_DIR_ST){
