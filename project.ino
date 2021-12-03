@@ -1,4 +1,3 @@
-
 #include <require_cpp11.h>
 #include <MFRC522.h>
 #include <deprecated.h>
@@ -26,7 +25,6 @@
 
 
 #define STOP_TO_U_TURN 20
-int cardCnt = 0; // card는 10번에 1번만 감지!
 
 enum car_direction{
   CAR_DIR_FW,
@@ -44,15 +42,16 @@ int mode = 1;
 car_direction prevDirections[STOP_TO_U_TURN];
 car_direction g_carDirection;
 
-int speed = 90;
-int rotatingSpeed = 150;
-int refreshInterval = 10;
-int rotationDelay = 300;
+const int speed = 90;
+const int rotatingSpeed = 150;
+const int refreshInterval = 10;
+const int rotationDelay = 400;
 
 bool uTurning = false;
+bool guideDetected = false; // 주차에서 사용
 bool lightOff = false;
 bool proximity = false;
-const int light_threshold = 500;
+const int light_threshold = 400;
 
 void init_line_tracer_modules(){
   pinMode(LT_MODULE_L, INPUT);
@@ -134,6 +133,16 @@ void lt_mode_update(){
         g_carDirection = CAR_DIR_RF;
       }
     }
+  }
+  else if (mode == 3){
+    if(ll && ff && !rr){
+      g_carDirection = CAR_DIR_LR; // 가이드 선 탐지
+    } 
+    else if(!ll && ff && !rr){
+      g_carDirection = CAR_DIR_FW; // 직진 차선 탐지
+    }
+    else
+      g_carDirection = CAR_DIR_ST; // 나머지 경우
   }
   
   updateDirections(prevDirections, STOP_TO_U_TURN, g_carDirection);
@@ -225,7 +234,6 @@ void car_update(){
         uTurning = true;
       Serial.println("uturn on");
     }
-    
   }
 }
 
@@ -247,34 +255,42 @@ void setup() {
   
 }
 
+
+// ------------------- LOOP -------------------
+
 void loop() {
-  ++cardCnt;
-  if(cardCnt >= STOP_TO_U_TURN){
-    cardCnt = 0;
-    detectCard();
+
+  if(mode == 1 || mode == 2){ // rfs, lfs
+    lt_mode_update();
+    get_light();
+    checkUltrasonic();
+    if(!lightOff && !proximity) {
+      car_update();
+    }
+    else {
+      Serial.println("Stopped by light or ultrasonic");
+      digitalWrite(EN1, LOW);
+      digitalWrite(EN2, LOW);
+      digitalWrite(ENA, 0);
+      digitalWrite(EN3, LOW);
+      digitalWrite(EN4, LOW);
+      digitalWrite(ENB, 0);
+      detectCard();
+    }
   }
 
-  if(!lightOff && !proximity) {
-    car_update();
+  else if(mode == 3){ // T-parking
+    // mode 3일 때는 car_update() 사용하지 않고 딜레이 써서 주행
+    tParking();
   }
-  else { // 암실이거나 앞에 물체 감지
-    digitalWrite(EN1, LOW);
-    digitalWrite(EN2, LOW);
-    digitalWrite(ENA, 0);
-    digitalWrite(EN3, LOW);
-    digitalWrite(EN4, LOW);
-    digitalWrite(ENB, 0);
-  }
+
   delay(refreshInterval);
-  lt_mode_update();
-  get_light();
-  checkUltrasonic();
 }
 
 
 void get_light(){
   int light_sensor = analogRead(LIGHT);
-  //Serial.println(light_sensor);
+  // Serial.println(light_sensor);
   if(light_sensor > light_threshold){
     lightOff = true;
   }
@@ -305,7 +321,7 @@ void detectCard(){
   if (buffer[0] == 0x21) {
     Serial.println(buffer[0]);
     byte modeByte = buffer[1];
-    Serial.println(mode);
+    Serial.println(modeByte);
     switch (modeByte) {
     case 0x00:
       mode=1;
@@ -339,4 +355,54 @@ void checkUltrasonic(){
   cm = duration / 29 / 2;
   if(0 < cm && cm < 15) proximity = true;
   else proximity = false;
+}
+
+void tParking(){
+  if(!guideDetected && g_carDirection == CAR_DIR_FW){
+    Serial.println("Rear");
+    digitalWrite(EN1, LOW); 
+    digitalWrite(EN2, HIGH); 
+    analogWrite(ENA, speed);
+    digitalWrite(EN3, HIGH); 
+    digitalWrite(EN4, LOW); 
+    analogWrite(ENB, speed);
+  }
+  else if (guideDetected && g_carDirection == CAR_DIR_FW){
+    // 직진 차선 찾음
+    mode = 1; // rfs로 전환
+  }
+  else if (g_carDirection == CAR_DIR_LR){ // 후방 좌회전 시작
+    guideDetected = true;
+    const int rearInterval = 200;
+
+    // 후진
+    digitalWrite(EN1, LOW); 
+    digitalWrite(EN2, HIGH); 
+    analogWrite(ENA, speed);
+    digitalWrite(EN3, HIGH); 
+    digitalWrite(EN4, LOW); 
+    analogWrite(ENB, speed);
+    delay(rearInterval);
+
+    // 우회전
+    digitalWrite(EN1, HIGH);
+    digitalWrite(EN2, LOW);
+    analogWrite(ENA, rotatingSpeed);
+    digitalWrite(EN3, HIGH);
+    digitalWrite(EN4, LOW);
+    analogWrite(ENB, rotatingSpeed); 
+    delay(rotationDelay);
+
+    // 후진
+    digitalWrite(EN1, LOW); 
+    digitalWrite(EN2, HIGH); 
+    analogWrite(ENA, speed);
+    digitalWrite(EN3, HIGH); 
+    digitalWrite(EN4, LOW); 
+    analogWrite(ENB, speed);
+    delay(rearInterval);
+  }
+  else if (g_carDirection == CAR_DIR_ST){
+    // 이전 운동상태 유지
+  }
 }
