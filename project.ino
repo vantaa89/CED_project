@@ -42,10 +42,10 @@ int mode = 1;
 car_direction prevDirections[STOP_TO_U_TURN];
 car_direction g_carDirection;
 
-const int speed = 90;
-const int rotatingSpeed = 150;
+const int speed = 70;
+const int rotatingSpeed = 100;
 const int refreshInterval = 10;
-const int rotationDelay = 400;
+const int rotationDelay = 300;
 
 bool uTurning = false;
 bool guideDetected = false; // 주차에서 사용
@@ -172,7 +172,6 @@ void car_update(){
       digitalWrite(EN4, LOW);
       analogWrite(ENB, rotatingSpeed);
     }
-
   }
   else if (g_carDirection == CAR_DIR_FW){
     Serial.println("Front");
@@ -281,7 +280,9 @@ void loop() {
 
   else if(mode == 3){ // T-parking
     // mode 3일 때는 car_update() 사용하지 않고 딜레이 써서 주행
+    lt_mode_update();
     tParking();
+    
   }
 
   delay(refreshInterval);
@@ -353,45 +354,40 @@ void checkUltrasonic(){
   digitalWrite(TRIGGER, LOW);
   duration = pulseIn(ECHO, HIGH);
   cm = duration / 29 / 2;
-  if(0 < cm && cm < 15) proximity = true;
+  if(0 < cm && cm < 20) proximity = true;
   else proximity = false;
 }
 
 void tParking(){
+  Serial.println(guideDetected);
+  Serial.println(g_carDirection);
   if(!guideDetected && g_carDirection == CAR_DIR_FW){
     Serial.println("Rear");
     digitalWrite(EN1, LOW); 
     digitalWrite(EN2, HIGH); 
-    analogWrite(ENA, speed);
+    analogWrite(ENA, speed * 1.3);
     digitalWrite(EN3, HIGH); 
     digitalWrite(EN4, LOW); 
-    analogWrite(ENB, speed);
+    analogWrite(ENB, speed * 1.3);
   }
   else if (guideDetected && g_carDirection == CAR_DIR_FW){
     // 직진 차선 찾음
+    Serial.println("line found, mode changed from 3 to 1");
     mode = 1; // rfs로 전환
   }
   else if (g_carDirection == CAR_DIR_LR){ // 후방 좌회전 시작
+    Serial.println("Guide Line Detected");
     guideDetected = true;
     const int rearInterval = 200;
-
-    // 후진
-    digitalWrite(EN1, LOW); 
-    digitalWrite(EN2, HIGH); 
-    analogWrite(ENA, speed);
-    digitalWrite(EN3, HIGH); 
-    digitalWrite(EN4, LOW); 
-    analogWrite(ENB, speed);
-    delay(rearInterval);
 
     // 우회전
     digitalWrite(EN1, HIGH);
     digitalWrite(EN2, LOW);
-    analogWrite(ENA, rotatingSpeed);
+    analogWrite(ENA, rotatingSpeed*1.5);
     digitalWrite(EN3, HIGH);
     digitalWrite(EN4, LOW);
-    analogWrite(ENB, rotatingSpeed); 
-    delay(rotationDelay);
+    analogWrite(ENB, rotatingSpeed*1.5); 
+    delay(rotationDelay * 2);
 
     // 후진
     digitalWrite(EN1, LOW); 
