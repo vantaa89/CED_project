@@ -207,6 +207,7 @@ void car_update(){
   }
 
   else if (g_carDirection == CAR_DIR_RR){
+    Serial.println("Right rotation");
     digitalWrite(EN1, HIGH);
     digitalWrite(EN2, LOW);
     digitalWrite(ENA, rotatingSpeed);
