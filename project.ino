@@ -26,6 +26,7 @@
 
 
 #define STOP_TO_U_TURN 20
+int cardCnt = 0; // card는 10번에 1번만 감지!
 
 enum car_direction{
   CAR_DIR_FW,
@@ -44,9 +45,9 @@ car_direction prevDirections[STOP_TO_U_TURN];
 car_direction g_carDirection;
 
 int speed = 90;
-int rotatingSpeed = 140;
+int rotatingSpeed = 150;
 int refreshInterval = 10;
-int rotationDelay = 400;
+int rotationDelay = 300;
 
 bool uTurning = false;
 bool lightOff = false;
@@ -86,7 +87,6 @@ void lt_mode_update(){
   bool ff = lt_isForward();
   bool rr = lt_isRight();
   if(mode==1){ // RFS
-
     if (!ll&&!ff&&!rr){ // 000
       g_carDirection = CAR_DIR_ST;
     }
@@ -98,6 +98,9 @@ void lt_mode_update(){
         g_carDirection = CAR_DIR_RF;
       }
     }
+    else if (ff){   // 010
+      g_carDirection = CAR_DIR_FW;
+    }
     else if (ll){   // 100
       if(ff){// rotation
         g_carDirection = CAR_DIR_LR;
@@ -105,9 +108,6 @@ void lt_mode_update(){
       else {
         g_carDirection = CAR_DIR_LF;
       }
-    }
-    else if (ff){   // 010
-      g_carDirection = CAR_DIR_FW;
     }
   }
   
@@ -123,6 +123,9 @@ void lt_mode_update(){
         g_carDirection = CAR_DIR_LF;
       }
     }
+    else if (ff){   // 010
+      g_carDirection = CAR_DIR_FW;
+    }
     else if (rr){   // 001
       if(ff){ // rotation
         g_carDirection = CAR_DIR_RR;
@@ -130,9 +133,6 @@ void lt_mode_update(){
       else {
         g_carDirection = CAR_DIR_RF;
       }
-    }
-    else if (ff){   // 010
-      g_carDirection = CAR_DIR_FW;
     }
   }
   
@@ -147,12 +147,23 @@ void car_update(){
     }
   }
   if(uTurning){
-    digitalWrite(EN1, LOW);
-    digitalWrite(EN2, HIGH);
-    analogWrite(ENA, rotatingSpeed);
-    digitalWrite(EN3, LOW);
-    digitalWrite(EN4, HIGH);
-    analogWrite(ENB, rotatingSpeed);
+    if(mode == 1){
+      digitalWrite(EN1, LOW);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, rotatingSpeed);
+      digitalWrite(EN3, LOW);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, rotatingSpeed);
+    }
+    else if(mode == 2){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, LOW);
+      analogWrite(ENA, rotatingSpeed);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, LOW);
+      analogWrite(ENB, rotatingSpeed);
+    }
+
   }
   else if (g_carDirection == CAR_DIR_FW){
     Serial.println("Front");
@@ -192,6 +203,7 @@ void car_update(){
     digitalWrite(EN3, LOW);
     digitalWrite(EN4, HIGH);
     digitalWrite(ENB, rotatingSpeed);
+    delay(rotationDelay);
   }
 
   else if (g_carDirection == CAR_DIR_RR){
@@ -235,6 +247,12 @@ void setup() {
 }
 
 void loop() {
+  ++cardCnt;
+  if(cardCnt >= STOP_TO_U_TURN){
+    cardCnt = 0;
+    detectCard();
+  }
+
   if(!lightOff && !proximity) {
     car_update();
   }
@@ -282,10 +300,12 @@ void detectCard(){
   status = mfrc522.MIFARE_Read(block, buffer, &size);
   Serial.println("Card tagged");
   Serial.println(buffer[0]);
+  byte prevMode = mode;
   if (buffer[0] == 0x21) {
     Serial.println(buffer[0]);
-    byte mode = buffer[1];
-    switch (mode) {
+    byte modeByte = buffer[1];
+    Serial.println(mode);
+    switch (modeByte) {
     case 0x00:
       mode=1;
       break;
@@ -297,6 +317,14 @@ void detectCard(){
       break;
     }
   }
+  if(prevMode!=mode){
+    Serial.print("Mode changed from ");
+    Serial.print(prevMode);
+    Serial.print(" to ");
+    Serial.print(mode);
+    Serial.println();
+  }
+
   mfrc522.PICC_HaltA();
   mfrc522.PCD_StopCrypto1();
 }
@@ -307,14 +335,7 @@ void checkUltrasonic(){
   delayMicroseconds(10);
   digitalWrite(TRIGGER, LOW);
   duration = pulseIn(ECHO, HIGH);
-  cm = microsecondsToCentimeters(duration);
-  //Serial.print(cm);
-  //Serial.println("cm");
-  // Serial.println();
+  cm = duration / 29 / 2;
   if(0 < cm && cm < 15) proximity = true;
   else proximity = false;
-}
-
-inline long microsecondsToCentimeters(long microseconds){
-  return microseconds / 29 / 2;
 }
