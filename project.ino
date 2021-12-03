@@ -1,3 +1,4 @@
+
 #include <require_cpp11.h>
 #include <MFRC522.h>
 #include <deprecated.h>
@@ -45,6 +46,7 @@ car_direction g_carDirection;
 int speed = 90;
 int rotatingSpeed = 140;
 int refreshInterval = 10;
+int rotationDelay = 400;
 
 bool uTurning = false;
 bool lightOff = false;
@@ -193,22 +195,13 @@ void car_update(){
   }
 
   else if (g_carDirection == CAR_DIR_RR){
-    Serial.println("Right rotation");
-/*    Serial.println("Front");
-    digitalWrite(EN1, HIGH); 
-    digitalWrite(EN2, LOW); 
-    analogWrite(ENA, speed);
-    digitalWrite(EN3, LOW); 
-    digitalWrite(EN4, HIGH); 
-    analogWrite(ENB, speed);
-    delay(200);*/
     digitalWrite(EN1, HIGH);
     digitalWrite(EN2, LOW);
     digitalWrite(ENA, rotatingSpeed);
     digitalWrite(EN3, HIGH);
     digitalWrite(EN4, LOW);
     digitalWrite(ENB, rotatingSpeed);
-    delay(200);
+    delay(rotationDelay);
   }
   
   else if (g_carDirection == CAR_DIR_ST){
