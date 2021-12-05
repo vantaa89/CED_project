@@ -56,7 +56,7 @@ const int light_threshold = 400;
 void init_line_tracer_modules(){
   pinMode(LT_MODULE_L, INPUT);
   pinMode(LT_MODULE_F, INPUT);
-  pinMode(LT_MODULE_R, INPUT);
+  pinMode(LT_MODULE_R, INPUT);https://www.youtube.com/watch?v=i39sLr6IHoA&list=RDi39sLr6IHoA&start_radio=1
 }
 
 bool lt_isLeft(){
@@ -370,15 +370,10 @@ void tParking(){
     digitalWrite(EN4, LOW); 
     analogWrite(ENB, speed * 1.3);
   }
-  else if (guideDetected && g_carDirection == CAR_DIR_FW){
-    // 직진 차선 찾음
-    Serial.println("line found, mode changed from 3 to 1");
-    mode = 1; // rfs로 전환
-  }
   else if (g_carDirection == CAR_DIR_LR){ // 후방 좌회전 시작
     Serial.println("Guide Line Detected");
     guideDetected = true;
-    const int rearInterval = 200;
+    const int rearInterval = 300;
 
     // 우회전
     digitalWrite(EN1, HIGH);
@@ -397,6 +392,7 @@ void tParking(){
     digitalWrite(EN4, LOW); 
     analogWrite(ENB, speed);
     delay(rearInterval);
+    mode = 1;
   }
   else if (g_carDirection == CAR_DIR_ST){
     // 이전 운동상태 유지
