@@ -259,8 +259,8 @@ void setup() {
 // ------------------- LOOP -------------------
 
 void loop() {
-
   if(mode == 1 || mode == 2){ // rfs, lfs
+        bluetooth();
     lt_mode_update();
     get_light();
     checkUltrasonic();
@@ -360,8 +360,8 @@ void checkUltrasonic(){
 }
 
 void tParking(){
-  Serial.println(guideDetected);
-  Serial.println(g_carDirection);
+  // Serial.println(guideDetected);
+  // Serial.println(g_carDirection);
   if(!guideDetected && g_carDirection == CAR_DIR_FW){
     // 장애물 치워야 움직이게
     while(proximity){
@@ -402,4 +402,18 @@ void tParking(){
   else if (g_carDirection == CAR_DIR_ST){
     // 이전 운동상태 유지
   }
+}
+
+void bluetooth() {
+    if(Serial.peek() != -1){
+        byte data = (byte) Serial.read();
+        if(data == '0'){
+            Serial.println("EMERGENCY");
+            analogWrite(ENA, 0);
+            analogWrite(ENB, 0);
+            delay(3000);
+            analogWrite(ENA, speed);
+            analogWrite(ENB, speed);
+        }
+    }
 }
