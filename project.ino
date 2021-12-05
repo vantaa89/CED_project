@@ -45,7 +45,8 @@ car_direction g_carDirection;
 const int speed = 70;
 const int rotatingSpeed = 100;
 const int refreshInterval = 10;
-const int rotationDelay = 300;
+const int rotationDelay = 250;
+const int rearInterval = 400;
 
 bool uTurning = false;
 bool guideDetected = false; // 주차에서 사용
@@ -56,7 +57,7 @@ const int light_threshold = 400;
 void init_line_tracer_modules(){
   pinMode(LT_MODULE_L, INPUT);
   pinMode(LT_MODULE_F, INPUT);
-  pinMode(LT_MODULE_R, INPUT);https://www.youtube.com/watch?v=i39sLr6IHoA&list=RDi39sLr6IHoA&start_radio=1
+  pinMode(LT_MODULE_R, INPUT);
 }
 
 bool lt_isLeft(){
@@ -373,7 +374,6 @@ void tParking(){
   else if (g_carDirection == CAR_DIR_LR){ // 후방 좌회전 시작
     Serial.println("Guide Line Detected");
     guideDetected = true;
-    const int rearInterval = 300;
 
     // 우회전
     digitalWrite(EN1, HIGH);
