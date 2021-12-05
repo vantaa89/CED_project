@@ -363,6 +363,11 @@ void tParking(){
   Serial.println(guideDetected);
   Serial.println(g_carDirection);
   if(!guideDetected && g_carDirection == CAR_DIR_FW){
+    // 장애물 치워야 움직이게
+    while(proximity){
+      checkUltrasonic();
+      delay(100);
+    }
     Serial.println("Rear");
     digitalWrite(EN1, LOW); 
     digitalWrite(EN2, HIGH); 
