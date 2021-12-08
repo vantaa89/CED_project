@@ -43,11 +43,11 @@ car_direction prevDirections[STOP_TO_U_TURN];
 car_direction g_carDirection;
 car_direction currentState = CAR_DIR_FW; // stop을 제외하고 가장 최근에 나온 것
 
-const int speed =150;
+const int speed =170;
 const int rotatingSpeed = 200;
 const int refreshInterval = 10;
 const int stopDelay = 250;
-const int brakeInterval = 200;
+const int brakeInterval = 150;
 const int rearInterval = 400;
 
 bool uTurning = false;
@@ -478,7 +478,7 @@ void checkUltrasonic(){
   digitalWrite(TRIGGER, LOW);
   duration = pulseIn(ECHO, HIGH);
   cm = duration / 29 / 2;
-  if(0 < cm && cm < 20) proximity = true;
+  if(0 < cm && cm < 13) proximity = true;
   else proximity = false;
 }
 
@@ -577,7 +577,7 @@ void tParking(){
       digitalWrite(EN3, HIGH); 
       digitalWrite(EN4, LOW); 
       analogWrite(ENB, speed);
-      delay(stopDelay/4);
+      delay(stopDelay/2.3);
     }
 
     tParkingRear = true;
