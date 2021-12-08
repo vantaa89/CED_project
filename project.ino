@@ -24,7 +24,7 @@
 #define ENB 5
 
 
-#define STOP_TO_U_TURN 20
+#define STOP_TO_U_TURN 10
 
 enum car_direction{
   CAR_DIR_FW,
@@ -55,6 +55,7 @@ bool rotating = false;
 bool guideDetected = false; // 주차에서 사용
 bool lightOff = false;
 bool proximity = false;
+bool tParkingRear = false;
 const int light_threshold = 400;
 
 void init_line_tracer_modules(){
@@ -266,7 +267,7 @@ void car_update(){
       digitalWrite(EN3, LOW);
       digitalWrite(EN4, HIGH);
       analogWrite(ENB, rotatingSpeed); 
-      delay(stopDelay / 3);
+      delay(stopDelay / 6);
     }
     rotating = true;
   }
@@ -287,15 +288,13 @@ void car_update(){
       digitalWrite(EN3, HIGH);
       digitalWrite(EN4, LOW);
       analogWrite(ENB, rotatingSpeed);
-      delay(stopDelay / 3);
+      delay(stopDelay / 6);
     }
     rotating = true;
   }
   
   else if (g_carDirection == CAR_DIR_ST){
-    // blank
     Serial.println("Stop");
-
     if(currentState == CAR_DIR_FW){
       Serial.println("Front");
       digitalWrite(EN1, HIGH);
@@ -391,12 +390,12 @@ void loop() {
     }
     else {
       Serial.println("Stopped by light or ultrasonic");
-      digitalWrite(EN1, LOW);
-      digitalWrite(EN2, LOW);
-      digitalWrite(ENA, 0);
-      digitalWrite(EN3, LOW);
-      digitalWrite(EN4, LOW);
-      digitalWrite(ENB, 0);
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
       detectCard();
     }
   }
@@ -484,42 +483,102 @@ void checkUltrasonic(){
 void tParking(){
   // Serial.println(guideDetected);
   // Serial.println(g_carDirection);
-  if(!guideDetected && g_carDirection == CAR_DIR_FW){
-    // 장애물 치워야 움직이게
-    while(proximity){
-      checkUltrasonic();
-      delay(100);
-    }
+
+  if(tParkingRear){
     Serial.println("Rear");
+    digitalWrite(EN1, HIGH);
+    digitalWrite(EN2, HIGH);
+    digitalWrite(ENA, 0);
+    digitalWrite(EN3, HIGH);
+    digitalWrite(EN4, HIGH);
+    digitalWrite(ENB, 0);
+    delay(stopDelay);
     digitalWrite(EN1, LOW); 
     digitalWrite(EN2, HIGH); 
     analogWrite(ENA, speed * 1.3);
     digitalWrite(EN3, HIGH); 
     digitalWrite(EN4, LOW); 
     analogWrite(ENB, speed * 1.3);
+    delay(stopDelay/6);
+    bool ll = lt_isLeft();
+    bool ff = lt_isForward();
+    bool rr = lt_isRight();
+    if(ll||rr||ff){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      digitalWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      digitalWrite(ENB, 0);
+      Serial.print("Mode changed from 3 to 1");
+      mode = 1;
+    }
+  }
+  else if(!guideDetected && g_carDirection == CAR_DIR_FW){
+    // 장애물 치워야 움직이게
+    while(proximity){
+      checkUltrasonic();
+      delay(100);
+    }
+    Serial.println("Rear");
+    digitalWrite(EN1, LOW);
+    digitalWrite(EN2, LOW);
+    digitalWrite(ENA, 0);
+    digitalWrite(EN3, LOW);
+    digitalWrite(EN4, LOW);
+    digitalWrite(ENB, 0);
+    delay(stopDelay);
+    digitalWrite(EN1, LOW); 
+    digitalWrite(EN2, HIGH); 
+    analogWrite(ENA, speed );
+    digitalWrite(EN3, HIGH); 
+    digitalWrite(EN4, LOW); 
+    analogWrite(ENB, speed);
+    delay(stopDelay/10);
   }
   else if (g_carDirection == CAR_DIR_LR){ // 후방 좌회전 시작
     Serial.println("Guide Line Detected");
     guideDetected = true;
 
     // 우회전
-    digitalWrite(EN1, HIGH);
-    digitalWrite(EN2, LOW);
-    analogWrite(ENA, rotatingSpeed*1.5);
-    digitalWrite(EN3, HIGH);
-    digitalWrite(EN4, LOW);
-    analogWrite(ENB, rotatingSpeed*1.5); 
-    delay(stopDelay * 2);
+    Serial.println("Right Rotation for T-parking");
+    for(int i = 0; i < 6; ++i){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
+      delay(brakeInterval);
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, LOW);
+      analogWrite(ENA, rotatingSpeed);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, LOW);
+      analogWrite(ENB, rotatingSpeed);
+      delay(stopDelay / 3);
+    }
 
     // 후진
-    digitalWrite(EN1, LOW); 
-    digitalWrite(EN2, HIGH); 
-    analogWrite(ENA, speed);
-    digitalWrite(EN3, HIGH); 
-    digitalWrite(EN4, LOW); 
-    analogWrite(ENB, speed);
-    delay(rearInterval);
-    mode = 1;
+    for(int i = 0; i < 6; ++i){
+      Serial.println("Rear");
+      digitalWrite(EN1, LOW);
+      digitalWrite(EN2, LOW);
+      digitalWrite(ENA, 0);
+      digitalWrite(EN3, LOW);
+      digitalWrite(EN4, LOW);
+      digitalWrite(ENB, 0);
+      delay(stopDelay);
+      digitalWrite(EN1, LOW); 
+      digitalWrite(EN2, HIGH); 
+      analogWrite(ENA, speed );
+      digitalWrite(EN3, HIGH); 
+      digitalWrite(EN4, LOW); 
+      analogWrite(ENB, speed);
+      delay(stopDelay/3);
+    }
+
+    tParkingRear = true;
   }
   else if (g_carDirection == CAR_DIR_ST){
     // 이전 운동상태 유지
