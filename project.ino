@@ -41,14 +41,17 @@ int mode = 1;
 
 car_direction prevDirections[STOP_TO_U_TURN];
 car_direction g_carDirection;
+car_direction currentState; // stop을 제외하고 가장 최근에 나온 것
 
-const int speed = 70;
-const int rotatingSpeed = 100;
+const int speed =150;
+const int rotatingSpeed = 200;
 const int refreshInterval = 10;
-const int rotationDelay = 250;
+const int stopDelay = 250;
+const int brakeInterval = 250;
 const int rearInterval = 400;
 
 bool uTurning = false;
+bool rotating = false;
 bool guideDetected = false; // 주차에서 사용
 bool lightOff = false;
 bool proximity = false;
@@ -155,85 +158,204 @@ void car_update(){
       Serial.println("uturn off");
       uTurning = false;
     }
+    rotating = false; // LR, RR의 경우 다시 true로 바꿔주니 상관없음
+    currentState = g_carDirection;
   }
   if(uTurning){
     if(mode == 1){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
+      delay(brakeInterval);
       digitalWrite(EN1, LOW);
       digitalWrite(EN2, HIGH);
       analogWrite(ENA, rotatingSpeed);
       digitalWrite(EN3, LOW);
       digitalWrite(EN4, HIGH);
       analogWrite(ENB, rotatingSpeed);
+      delay(stopDelay/6);
     }
     else if(mode == 2){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
+      delay(brakeInterval);
       digitalWrite(EN1, HIGH);
       digitalWrite(EN2, LOW);
       analogWrite(ENA, rotatingSpeed);
       digitalWrite(EN3, HIGH);
       digitalWrite(EN4, LOW);
       analogWrite(ENB, rotatingSpeed);
+      delay(stopDelay/6);
     }
   }
   else if (g_carDirection == CAR_DIR_FW){
     Serial.println("Front");
+    digitalWrite(EN1, HIGH);
+    digitalWrite(EN2, HIGH);
+    analogWrite(ENA, 0);
+    digitalWrite(EN3, HIGH);
+    digitalWrite(EN4, HIGH);
+    analogWrite(ENB, 0);
+    delay(brakeInterval);
     digitalWrite(EN1, HIGH); 
     digitalWrite(EN2, LOW); 
     analogWrite(ENA, speed);
     digitalWrite(EN3, LOW); 
     digitalWrite(EN4, HIGH); 
     analogWrite(ENB, speed);
+    delay(stopDelay/6);
   }
 
   else if (g_carDirection == CAR_DIR_LF){
     Serial.println("Left");
+    digitalWrite(EN1, HIGH);
+    digitalWrite(EN2, HIGH);
+    analogWrite(ENA, 0);
+    digitalWrite(EN3, HIGH);
+    digitalWrite(EN4, HIGH);
+    analogWrite(ENB, 0);
+    delay(brakeInterval);
     digitalWrite(EN1, LOW);
     digitalWrite(EN2, HIGH);
     analogWrite(ENA, rotatingSpeed);
     digitalWrite(EN3, LOW);
     digitalWrite(EN4, HIGH);
-    analogWrite(ENB, rotatingSpeed);    
+    analogWrite(ENB, rotatingSpeed); 
+    delay(stopDelay / 6);
+  
   }
 
   else if (g_carDirection == CAR_DIR_RF){
     Serial.println("Right");
     digitalWrite(EN1, HIGH);
+    digitalWrite(EN2, HIGH);
+    analogWrite(ENA, 0);
+    digitalWrite(EN3, HIGH);
+    digitalWrite(EN4, HIGH);
+    analogWrite(ENB, 0);
+    delay(brakeInterval);
+    digitalWrite(EN1, HIGH);
     digitalWrite(EN2, LOW);
     analogWrite(ENA, rotatingSpeed);
     digitalWrite(EN3, HIGH);
     digitalWrite(EN4, LOW);
-    analogWrite(ENB, rotatingSpeed);    
+    analogWrite(ENB, rotatingSpeed);
+    delay(stopDelay / 6);
   }
 
   else if (g_carDirection == CAR_DIR_LR){
     Serial.println("Left rotation");
-    digitalWrite(EN1, LOW);
-    digitalWrite(EN2, HIGH);
-    digitalWrite(ENA, rotatingSpeed);
-    digitalWrite(EN3, LOW);
-    digitalWrite(EN4, HIGH);
-    digitalWrite(ENB, rotatingSpeed);
-    delay(rotationDelay);
+    for(int i = 0; i < 3; ++i){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
+      delay(brakeInterval);
+      digitalWrite(EN1, LOW);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, rotatingSpeed);
+      digitalWrite(EN3, LOW);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, rotatingSpeed); 
+      delay(stopDelay / 3);
+    }
+    rotating = true;
   }
 
   else if (g_carDirection == CAR_DIR_RR){
     Serial.println("Right rotation");
-    digitalWrite(EN1, HIGH);
-    digitalWrite(EN2, LOW);
-    digitalWrite(ENA, rotatingSpeed);
-    digitalWrite(EN3, HIGH);
-    digitalWrite(EN4, LOW);
-    digitalWrite(ENB, rotatingSpeed);
-    delay(rotationDelay);
+    for(int i = 0; i < 3; ++i){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
+      delay(brakeInterval);
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, LOW);
+      analogWrite(ENA, rotatingSpeed);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, LOW);
+      analogWrite(ENB, rotatingSpeed);
+      delay(stopDelay / 3);
+    }
+    rotating = true;
   }
   
   else if (g_carDirection == CAR_DIR_ST){
     // blank
     Serial.println("Stop");
-    
-    if(uTurn(prevDirections, STOP_TO_U_TURN)){
-        uTurning = true;
-      Serial.println("uturn on");
+
+    if(currentState == CAR_DIR_FW){
+      Serial.println("Front");
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
+      delay(brakeInterval);
+      digitalWrite(EN1, HIGH); 
+      digitalWrite(EN2, LOW); 
+      analogWrite(ENA, speed);
+      digitalWrite(EN3, LOW); 
+      digitalWrite(EN4, HIGH); 
+      analogWrite(ENB, speed);
+      delay(stopDelay/6);
     }
+    else if (currentState == CAR_DIR_LF || currentState == CAR_DIR_LR){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
+      delay(brakeInterval);
+      digitalWrite(EN1, LOW);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, rotatingSpeed);
+      digitalWrite(EN3, LOW);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, rotatingSpeed); 
+      delay(stopDelay / 3);
+    }
+    else if (currentState == CAR_DIR_RF || currentState == CAR_DIR_RR){
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, HIGH);
+      analogWrite(ENA, 0);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, HIGH);
+      analogWrite(ENB, 0);
+      delay(brakeInterval);
+      digitalWrite(EN1, HIGH);
+      digitalWrite(EN2, LOW);
+      analogWrite(ENA, rotatingSpeed);
+      digitalWrite(EN3, HIGH);
+      digitalWrite(EN4, LOW);
+      analogWrite(ENB, rotatingSpeed);
+      delay(stopDelay / 3);
+    }
+    else {
+      // 실행될 일 없는 코드
+      // currentState != CAR_DIR_ST
+    }
+
+    if(!rotating && uTurn(prevDirections, STOP_TO_U_TURN)){
+        uTurning = true;
+        Serial.println("uturn on");
+    }
+
+
   }
 }
 
@@ -387,7 +509,7 @@ void tParking(){
     digitalWrite(EN3, HIGH);
     digitalWrite(EN4, LOW);
     analogWrite(ENB, rotatingSpeed*1.5); 
-    delay(rotationDelay * 2);
+    delay(stopDelay * 2);
 
     // 후진
     digitalWrite(EN1, LOW); 
@@ -401,6 +523,7 @@ void tParking(){
   }
   else if (g_carDirection == CAR_DIR_ST){
     // 이전 운동상태 유지
+    
   }
 }
 
